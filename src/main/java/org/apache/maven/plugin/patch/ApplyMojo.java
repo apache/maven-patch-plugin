@@ -237,6 +237,13 @@ public class ApplyMojo
     @Parameter( defaultValue = "false" )
     private boolean binary;
 
+    /**
+     * List of ANT-style exclude patterns separated by a comma. These patterns are used to exclude patch files found
+     * in the {@link ApplyMojo#patchDirectory}. These exclude patterns does not apply to a static defined list of
+     * {@link ApplyMojo#patches}.
+     *
+     * @since 1.3
+     */
     @Parameter
     private String excludePattern;
 
