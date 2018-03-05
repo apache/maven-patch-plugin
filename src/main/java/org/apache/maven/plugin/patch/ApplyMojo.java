@@ -237,6 +237,9 @@ public class ApplyMojo
     @Parameter( defaultValue = "false" )
     private boolean binary;
 
+    @Parameter
+    private String excludePattern;
+
     /**
      * Apply the patches. Give preference to patchFile over patchSourceDir/patches, and preference to originalFile over
      * workDir.
@@ -278,7 +281,12 @@ public class ApplyMojo
                         + patchDirectory );
                 }
 
-                List foundPatchFiles = FileUtils.getFileNames( patchDirectory, "*", null, false );
+                if ( excludePattern != null )
+                {
+                    getLog().info( "Exclude pattern: " + excludePattern );
+                }
+
+                List foundPatchFiles = FileUtils.getFileNames( patchDirectory, "*", excludePattern, false );
 
                 patchesToApply = findPatchesToApply( foundPatchFiles, patchDirectory );
 
