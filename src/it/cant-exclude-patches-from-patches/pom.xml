@@ -39,7 +39,9 @@
         <configuration>
           <targetDirectory>${basedir}</targetDirectory>
           <!-- this exclude does not work, as it is only excluding files from patchDirectory -->
-          <excludePattern>se*.patch</excludePattern>
+          <excludes>
+            <exclude>se*.patch</exclude>
+          </excludes>
           <!-- both patches should be executed -->
           <patches>
             <patch>first.patch</patch>

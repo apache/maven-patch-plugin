@@ -21,8 +21,8 @@
   <modelVersion>4.0.0</modelVersion>
   
   <groupId>test</groupId>
-  <artifactId>exclude-patches-from-patchDirectory</artifactId>
-  <name>exclude-patches-from-patchDirectory</name>
+  <artifactId>exclude-multiple-patterns-from-patchDirectory</artifactId>
+  <name>exclude-multiple-patterns-from-patchDirectory</name>
   <version>1.0-SNAPSHOT</version>
 
   <properties>
@@ -39,6 +39,7 @@
         <configuration>
           <targetDirectory>${basedir}</targetDirectory>
           <excludes>
+            <exclude>fi*st.patch</exclude>
             <exclude>se*.patch</exclude>
           </excludes>
           <!-- enables reading of patches from src/main/patches -->
