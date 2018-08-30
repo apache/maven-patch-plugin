@@ -27,6 +27,7 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.codehaus.plexus.util.FileUtils;
 import org.codehaus.plexus.util.IOUtil;
+import org.codehaus.plexus.util.StringUtils;
 import org.codehaus.plexus.util.cli.CommandLineException;
 import org.codehaus.plexus.util.cli.CommandLineUtils;
 import org.codehaus.plexus.util.cli.Commandline;
@@ -238,14 +239,14 @@ public class ApplyMojo
     private boolean binary;
 
     /**
-     * List of ANT-style exclude patterns separated by a comma. These patterns are used to exclude patch files found
+     * List of ANT-style exclude patterns. These patterns are used to exclude patch files found
      * in the {@link ApplyMojo#patchDirectory}. These exclude patterns does not apply to a static defined list of
      * {@link ApplyMojo#patches}.
      *
      * @since 1.3
      */
     @Parameter
-    private String excludes;
+    private List excludes;
 
     /**
      * Apply the patches. Give preference to patchFile over patchSourceDir/patches, and preference to originalFile over
@@ -288,12 +289,14 @@ public class ApplyMojo
                         + patchDirectory );
                 }
 
+                String excludePatterns = "";
                 if ( excludes != null )
                 {
-                    getLog().info( "Exclude pattern: " + excludes);
+                    excludePatterns = StringUtils.join( excludes.iterator(), "," );
+                    getLog().info( "Exclude pattern: " + excludePatterns );
                 }
 
-                List foundPatchFiles = FileUtils.getFileNames( patchDirectory, "*", excludes, false );
+                List foundPatchFiles = FileUtils.getFileNames( patchDirectory, "*", excludePatterns, false );
 
                 patchesToApply = findPatchesToApply( foundPatchFiles, patchDirectory );
 
