@@ -289,7 +289,7 @@ public class ApplyMojo
                         + patchDirectory );
                 }
 
-                String excludePatterns = "";
+                String excludePatterns = null;
                 if ( excludes != null )
                 {
                     excludePatterns = StringUtils.join( excludes.iterator(), "," );
