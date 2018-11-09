@@ -246,7 +246,7 @@ public class ApplyMojo
      * @since 1.3
      */
     @Parameter
-    private List excludes;
+    private List<String> excludes;
 
     /**
      * Apply the patches. Give preference to patchFile over patchSourceDir/patches, and preference to originalFile over
