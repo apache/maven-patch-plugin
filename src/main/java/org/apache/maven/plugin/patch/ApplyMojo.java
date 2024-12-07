@@ -318,8 +318,9 @@ public class ApplyMojo extends AbstractMojo {
         }
     }
 
-    private Map findPatchesToApply(List foundPatchFiles, File patchSourceDir) throws MojoFailureException {
-        Map patchesApplied = new LinkedHashMap();
+    private Map<String, Commandline> findPatchesToApply(List foundPatchFiles, File patchSourceDir)
+            throws MojoFailureException {
+        Map<String, Commandline> patchesApplied = new LinkedHashMap<>();
 
         if (naturalOrderProcessing) {
             patches = new ArrayList(foundPatchFiles);
@@ -365,9 +366,9 @@ public class ApplyMojo extends AbstractMojo {
         return patchesApplied;
     }
 
-    private void checkStrictPatchCompliance(List foundPatchFiles) throws MojoExecutionException {
+    private void checkStrictPatchCompliance(List<String> foundPatchFiles) throws MojoExecutionException {
         if (strictPatching) {
-            List ignored = new ArrayList();
+            List<String> ignored = new ArrayList<>();
 
             if (ignoredPatches != null) {
                 ignored.addAll(ignoredPatches);
@@ -377,22 +378,15 @@ public class ApplyMojo extends AbstractMojo {
                 ignored.addAll(DEFAULT_IGNORED_PATCHES);
             }
 
-            List limbo = new ArrayList(foundPatchFiles);
-
-            for (Object anIgnored : ignored) {
-                String ignoredFile = (String) anIgnored;
-
-                limbo.remove(ignoredFile);
-            }
+            List<String> limbo = new ArrayList(foundPatchFiles);
+            limbo.removeAll(ignored);
 
             if (!limbo.isEmpty()) {
                 StringBuilder extraFileBuffer = new StringBuilder();
 
                 extraFileBuffer.append("Found ").append(limbo.size()).append(" unlisted patch files:");
 
-                for (Object foundPatchFile : foundPatchFiles) {
-                    String patch = (String) foundPatchFile;
-
+                for (String patch : foundPatchFiles) {
                     extraFileBuffer.append("\n  \'").append(patch).append('\'');
                 }
 
@@ -418,7 +412,7 @@ public class ApplyMojo extends AbstractMojo {
         };
 
         // used if failFast is false
-        List failedPatches = new ArrayList();
+        List<String> failedPatches = new ArrayList<>();
 
         for (Entry<String, Commandline> entry : patchesApplied.entrySet()) {
             String patchName = entry.getKey();
@@ -445,7 +439,7 @@ public class ApplyMojo extends AbstractMojo {
 
         if (!failedPatches.isEmpty()) {
             getLog().error("Failed applying one or more patches:");
-            for (Object failedPatch : failedPatches) {
+            for (String failedPatch : failedPatches) {
                 getLog().error("* " + failedPatch);
             }
             throw new MojoExecutionException("Patch command failed for one or more patches."
