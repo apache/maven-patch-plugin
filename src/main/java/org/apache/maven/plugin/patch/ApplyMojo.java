@@ -42,6 +42,7 @@ import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -57,7 +58,6 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.codehaus.plexus.util.FileUtils;
-import org.codehaus.plexus.util.IOUtil;
 import org.codehaus.plexus.util.StringUtils;
 import org.codehaus.plexus.util.cli.CommandLineException;
 import org.codehaus.plexus.util.cli.CommandLineUtils;
@@ -70,14 +70,14 @@ import org.codehaus.plexus.util.cli.StreamConsumer;
 @Mojo(name = "apply", defaultPhase = LifecyclePhase.PROCESS_SOURCES)
 public class ApplyMojo extends AbstractMojo {
 
-    public static final List PATCH_FAILURE_WATCH_PHRASES;
+    public static final List<String> PATCH_FAILURE_WATCH_PHRASES;
 
-    public static final List DEFAULT_IGNORED_PATCHES;
+    public static final List<String> DEFAULT_IGNORED_PATCHES;
 
-    public static final List DEFAULT_IGNORED_PATCH_PATTERNS;
+    public static final List<String> DEFAULT_IGNORED_PATCH_PATTERNS;
 
     static {
-        List watches = new ArrayList();
+        List<String> watches = new ArrayList<>();
 
         watches.add("fail");
         watches.add("skip");
@@ -85,14 +85,14 @@ public class ApplyMojo extends AbstractMojo {
 
         PATCH_FAILURE_WATCH_PHRASES = watches;
 
-        List ignored = new ArrayList();
+        List<String> ignored = new ArrayList<>();
 
         ignored.add(".svn");
         ignored.add("CVS");
 
         DEFAULT_IGNORED_PATCHES = ignored;
 
-        List ignoredPatterns = new ArrayList();
+        List<String> ignoredPatterns = new ArrayList<>();
 
         ignoredPatterns.add(".svn/**");
         ignoredPatterns.add("CVS/**");
@@ -112,7 +112,7 @@ public class ApplyMojo extends AbstractMojo {
      * is mutually exclusive with the <code>patchfile</code> parameter.
      */
     @Parameter
-    protected List patches;
+    protected List<String> patches;
 
     /**
      * Whether to skip this goal's execution.
@@ -209,7 +209,7 @@ public class ApplyMojo extends AbstractMojo {
      * <code>skip</code> and <code>reject</code> are used.
      */
     @Parameter
-    private List failurePhrases = PATCH_FAILURE_WATCH_PHRASES;
+    private List<String> failurePhrases = PATCH_FAILURE_WATCH_PHRASES;
 
     /**
      * The original file which will be modified by the patch. By default, the patch tool will automatically derive the
@@ -301,7 +301,7 @@ public class ApplyMojo extends AbstractMojo {
                     getLog().info("Exclude pattern: " + excludePatterns);
                 }
 
-                List foundPatchFiles = FileUtils.getFileNames(patchDirectory, "*", excludePatterns, false);
+                List<String> foundPatchFiles = FileUtils.getFileNames(patchDirectory, "*", excludePatterns, false);
 
                 patchesToApply = findPatchesToApply(foundPatchFiles, patchDirectory);
 
@@ -318,8 +318,9 @@ public class ApplyMojo extends AbstractMojo {
         }
     }
 
-    private Map findPatchesToApply(List foundPatchFiles, File patchSourceDir) throws MojoFailureException {
-        Map patchesApplied = new LinkedHashMap();
+    private Map<String, Commandline> findPatchesToApply(List foundPatchFiles, File patchSourceDir)
+            throws MojoFailureException {
+        Map<String, Commandline> patchesApplied = new LinkedHashMap<>();
 
         if (naturalOrderProcessing) {
             patches = new ArrayList(foundPatchFiles);
@@ -336,12 +337,9 @@ public class ApplyMojo extends AbstractMojo {
             throw new MojoFailureException("unable to read patch tracking file: " + ioe.getMessage());
         }
 
-        for (Object patche : patches) {
-            String patch = (String) patche;
-
+        for (String patch : patches) {
             if (!alreadyAppliedPatches.contains(patch)) {
                 File patchFile = new File(patchSourceDir, patch);
-
                 getLog().debug("Looking for patch: " + patch + " in: " + patchFile);
 
                 if (!patchFile.exists()) {
@@ -368,9 +366,9 @@ public class ApplyMojo extends AbstractMojo {
         return patchesApplied;
     }
 
-    private void checkStrictPatchCompliance(List foundPatchFiles) throws MojoExecutionException {
+    private void checkStrictPatchCompliance(List<String> foundPatchFiles) throws MojoExecutionException {
         if (strictPatching) {
-            List ignored = new ArrayList();
+            List<String> ignored = new ArrayList<>();
 
             if (ignoredPatches != null) {
                 ignored.addAll(ignoredPatches);
@@ -380,22 +378,15 @@ public class ApplyMojo extends AbstractMojo {
                 ignored.addAll(DEFAULT_IGNORED_PATCHES);
             }
 
-            List limbo = new ArrayList(foundPatchFiles);
-
-            for (Object anIgnored : ignored) {
-                String ignoredFile = (String) anIgnored;
-
-                limbo.remove(ignoredFile);
-            }
+            List<String> limbo = new ArrayList(foundPatchFiles);
+            limbo.removeAll(ignored);
 
             if (!limbo.isEmpty()) {
                 StringBuilder extraFileBuffer = new StringBuilder();
 
                 extraFileBuffer.append("Found ").append(limbo.size()).append(" unlisted patch files:");
 
-                for (Object foundPatchFile : foundPatchFiles) {
-                    String patch = (String) foundPatchFile;
-
+                for (String patch : foundPatchFiles) {
                     extraFileBuffer.append("\n  \'").append(patch).append('\'');
                 }
 
@@ -407,7 +398,7 @@ public class ApplyMojo extends AbstractMojo {
         }
     }
 
-    private String applyPatches(Map patchesApplied) throws MojoExecutionException {
+    private String applyPatches(Map<String, Commandline> patchesApplied) throws MojoExecutionException {
         final StringWriter outputWriter = new StringWriter();
 
         StreamConsumer consumer = new StreamConsumer() {
@@ -421,12 +412,11 @@ public class ApplyMojo extends AbstractMojo {
         };
 
         // used if failFast is false
-        List failedPatches = new ArrayList();
+        List<String> failedPatches = new ArrayList<>();
 
-        for (Object o : patchesApplied.entrySet()) {
-            Entry entry = (Entry) o;
-            String patchName = (String) entry.getKey();
-            Commandline cli = (Commandline) entry.getValue();
+        for (Entry<String, Commandline> entry : patchesApplied.entrySet()) {
+            String patchName = entry.getKey();
+            Commandline cli = entry.getValue();
 
             try {
                 getLog().info("Applying patch: " + patchName);
@@ -449,11 +439,11 @@ public class ApplyMojo extends AbstractMojo {
 
         if (!failedPatches.isEmpty()) {
             getLog().error("Failed applying one or more patches:");
-            for (Object failedPatche : failedPatches) {
-                getLog().error("* " + failedPatche);
+            for (String failedPatch : failedPatches) {
+                getLog().error("* " + failedPatch);
             }
             throw new MojoExecutionException("Patch command failed for one or more patches."
-                    + " Please see console and debug output for more information.");
+                    + " See console and debug output for more information.");
         }
 
         return outputWriter.toString();
@@ -475,12 +465,9 @@ public class ApplyMojo extends AbstractMojo {
     }
 
     private void writeTrackingFile(Map patchesApplied) throws MojoExecutionException {
-        FileWriter writer = null;
-        try {
-            boolean appending = patchTrackingFile.exists();
+        boolean appending = patchTrackingFile.exists();
 
-            writer = new FileWriter(patchTrackingFile, appending);
-
+        try (Writer writer = new FileWriter(patchTrackingFile, appending)) {
             for (Iterator it = patchesApplied.keySet().iterator(); it.hasNext(); ) {
                 if (appending) {
                     writer.write(System.getProperty("line.separator"));
@@ -493,20 +480,13 @@ public class ApplyMojo extends AbstractMojo {
                     writer.write(System.getProperty("line.separator"));
                 }
             }
-
-            writer.close();
-            writer = null;
         } catch (IOException e) {
             throw new MojoExecutionException("Failed to write patch-tracking file: " + patchTrackingFile, e);
-        } finally {
-            IOUtil.close(writer);
         }
     }
 
     private void checkForWatchPhrases(String output) throws MojoExecutionException {
-        for (Object failurePhrase : failurePhrases) {
-            String phrase = (String) failurePhrase;
-
+        for (String phrase : failurePhrases) {
             if (output.contains(phrase)) {
                 throw new MojoExecutionException("Failed to apply patches (detected watch-phrase: \'" + phrase
                         + "\' in output). " + "If this is in error, configure the patchFailureWatchPhrases parameter.");
@@ -515,7 +495,7 @@ public class ApplyMojo extends AbstractMojo {
     }
 
     /**
-     * Add a new Patch task to the Ant calling mechanism. Give preference to originalFile/destFile, then workDir, and
+     * Add a new Patch task to the calling mechanism. Give preference to originalFile/destFile, then workDir, and
      * finally ${basedir}.
      */
     private Commandline createPatchCommand(File patchFile) {
