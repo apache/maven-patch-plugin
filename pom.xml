@@ -31,7 +31,7 @@ under the License.
   <version>1.3-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
 
-  <name>Apache Maven Patch Plugin</name>
+  <name>Apache Maven Patch Plugin (RETIRED)</name>
   <description>The Patch Plugin is used to apply patches to source files.</description>
 
   <contributors>
