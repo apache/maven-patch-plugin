@@ -58,7 +58,6 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.codehaus.plexus.util.FileUtils;
-import org.codehaus.plexus.util.IOUtil;
 import org.codehaus.plexus.util.StringUtils;
 import org.codehaus.plexus.util.cli.CommandLineException;
 import org.codehaus.plexus.util.cli.CommandLineUtils;
@@ -297,7 +296,6 @@ public class ApplyMojo extends AbstractMojo {
                 }
 
                 String excludePatterns = null;
-
                 if (excludes != null) {
                     excludePatterns = StringUtils.join(excludes.iterator(), ",");
                     getLog().info("Exclude pattern: " + excludePatterns);
